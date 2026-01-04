@@ -12,7 +12,7 @@ import 'package:printing/printing.dart';
 // ==========================================
 
 // TODO: GET YOUR KEY HERE: https://aistudio.google.com/app/apikey
-const String _apiKey = "AIzaSyBfyXr67_f6C_WTDrPIoMYEbCBrJB08mLg"; 
+const String _apiKey = "AIzaSyCvIGSWr1xqh6t7GI5gmEhBnZ_E3XJBSV4"; 
 
 void main() {
   runApp(const MyApp());
