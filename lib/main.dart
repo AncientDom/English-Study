@@ -29,31 +29,73 @@ class MyApp extends StatelessWidget {
 
 // --- DATA ENGINE (THE BRAIN) ---
 class AppData {
-  // 1. GENERATE 100 MOCK QUESTIONS PER TOPIC
+  // --- REAL CONTENT DATABASE (Simulating "Whole Book") ---
+  
+  // VOCABULARY DATA
+  static final List<String> antonyms = [
+    "Abate - Aggravate", "Absolve - Blame", "Acrimony - Courtesy", "Adversity - Prosperity",
+    "Alien - Native", "Allure - Repulse", "Amplify - Lessen", "Antipathy - Admiration",
+    "Apathy - Concern", "Arid - Fertile", "Authentic - Fake", "Audacity - Cowardice",
+    "Benevolent - Malevolent", "Barbarous - Civilized", "Bleak - Bright", "Brittle - Tough"
+  ];
+  
+  static final List<String> synonyms = [
+    "Abstain - Refrain", "Acknowledge - Admit", "Aid - Help", "Adept - Skilled",
+    "Adorn - Decorate", "Affection - Love", "Agile - Quick", "Alleviate - Relieve",
+    "Ambition - Desire", "Anger - Fury", "Answer - Reply", "Approve - Accept"
+  ];
+
+  static final List<String> idioms = [
+    "A hot potato - A controversial issue",
+    "Ball is in your court - It's your decision now",
+    "Beat around the bush - Avoiding the main topic",
+    "Best of both worlds - All the advantages",
+    "Bite off more than you can chew - Take on a task that is way too big",
+    "Blessing in disguise - A good thing that seemed bad at first",
+    "Burn the midnight oil - Work late into the night"
+  ];
+
+  // GRAMMAR DATA
+  static final List<String> errorRules = [
+    "Rule 1: Two singular subjects connected by 'and' require a PLURAL verb.\n(e.g., Gold and Silver ARE precious metals.)",
+    "Rule 2: If two singular nouns refer to the same person, the verb must be SINGULAR.\n(e.g., The poet and painter IS dead.)",
+    "Rule 3: 'One of' is always followed by a PLURAL noun and SINGULAR verb.\n(e.g., One of the boys IS missing.)",
+    "Rule 4: Words like 'Scarcely', 'Hardly' are followed by 'When'.\n(e.g., Scarcely had I entered the room WHEN the phone rang.)"
+  ];
+
+  static final List<String> prepositions = [
+    "Abide BY (a promise)", "Absorb IN (work)", "Account FOR (money)", "Accused OF (theft)",
+    "Accustomed TO (habits)", "Afraid OF (death)", "Agree WITH (a person)", "Agree TO (a proposal)",
+    "Aim AT (target)", "Angry WITH (person)", "Angry AT (something)", "Apologize TO (person)"
+  ];
+
+  // READING DATA
+  static final List<String> clozeRules = [
+    "Tip 1: Read the whole passage first to get the 'tone' (Positive/Negative).",
+    "Tip 2: Identify the type of word missing (Noun, Verb, Adjective).",
+    "Tip 3: Look for linking words (However, Although, Moreover).",
+    "Tip 4: Eliminate options that don't fit the grammar context."
+  ];
+
+  // --- QUIZ DATA (Kept from before) ---
   static List<Map<String, dynamic>> getQuestions(String topic) {
     List<Map<String, dynamic>> data = [];
-    
-    // Add some "Real" examples first
     if (topic == "Vocabulary") {
       data.add({"q": "Antonym of CANDID", "options": ["Frank", "Deceptive", "Honest", "Open"], "ans": 1});
       data.add({"q": "Synonym of ABATE", "options": ["Increase", "Reduce", "Observe", "Create"], "ans": 1});
-    } else if (topic == "Grammar") {
-      data.add({"q": "Spot Error: She do not / know how / to swim.", "options": ["She do not", "know how", "to swim", "No Error"], "ans": 0});
-      data.add({"q": "Preposition: He died ___ malaria.", "options": ["of", "from", "by", "with"], "ans": 0});
-    } else {
-      data.add({"q": "Reading: The author implies that...", "options": ["A", "B", "C", "D"], "ans": 2});
-    }
-
-    // Fill the rest to reach 100 questions (Simulation)
+      // ... (Add more real questions here later)
+    } 
+    // Fill with mock data to ensure 100 questions exist
     for (int i = data.length; i < 100; i++) {
       data.add({
-        "q": "Mock $topic Question #${i + 1} (generated for testing 100 Qs)",
-        "options": ["Option A", "Option B", "Option C", "Option D"],
-        "ans": Random().nextInt(4) // Random answer
+        "q": "Mock $topic Question #${i + 1}", 
+        "options": ["Option A", "Option B", "Option C", "Option D"], 
+        "ans": 0
       });
     }
     return data;
   }
+}
 
   // 2. MOCK STUDY MATERIAL (Text Book Mode)
   static const String vocabStudy = """
@@ -181,25 +223,94 @@ class SubjectDashboard extends StatelessWidget {
 
 // --- FEATURE 1: STUDY MATERIAL (BOOK READER) ---
 class StudyReader extends StatelessWidget {
+class StudyReader extends StatelessWidget {
   final String topic;
   const StudyReader({super.key, required this.topic});
 
   @override
   Widget build(BuildContext context) {
-    String content = "";
-    if (topic == "Vocabulary") content = AppData.vocabStudy;
-    else if (topic == "Grammar") content = AppData.grammarStudy;
-    else content = "Reading comprehension passages would appear here.\n\n(Generated via internet APIs in full version).";
+    // Define tabs based on topic
+    List<String> tabs = [];
+    List<List<String>> content = [];
 
-    return Scaffold(
-      appBar: AppBar(title: Text("$topic Material")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Text(content, style: const TextStyle(fontSize: 16, height: 1.5)),
+    if (topic == "Vocabulary") {
+      tabs = ["Antonyms", "Synonyms", "Idioms"];
+      content = [AppData.antonyms, AppData.synonyms, AppData.idioms];
+    } else if (topic == "Grammar") {
+      tabs = ["Error Rules", "Prepositions"];
+      content = [AppData.errorRules, AppData.prepositions];
+    } else {
+      tabs = ["Cloze Test Tips"];
+      content = [AppData.clozeRules];
+    }
+
+    return DefaultTabController(
+      length: tabs.length,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("$topic Study Book"),
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+          bottom: TabBar(
+            isScrollable: true, // Allows many tabs to fit
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: tabs.map((t) => Tab(text: t)).toList(),
+          ),
+          actions: [
+            // The "Gather from Internet" Simulation
+            IconButton(
+              icon: const Icon(Icons.cloud_download),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Checking for new chapters online... (All up to date)"))
+                );
+              },
+            )
+          ],
+        ),
+        body: TabBarView(
+          children: content.map((list) {
+            return Container(
+              color: Colors.white,
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: list.length,
+                separatorBuilder: (ctx, i) => const Divider(height: 1),
+                itemBuilder: (ctx, i) {
+                  // Format the text nicely
+                  final text = list[i];
+                  final parts = text.split("-");
+                  
+                  // If it's a "Word - Definition" format, style it boldly
+                  if (parts.length > 1) {
+                    return ListTile(
+                      title: Text(parts[0].trim(), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      subtitle: Text(parts.sublist(1).join("-").trim()),
+                      leading: CircleAvatar(
+                        radius: 15,
+                        backgroundColor: Colors.indigo.shade50,
+                        child: Text("${i+1}", style: const TextStyle(fontSize: 12)),
+                      ),
+                    );
+                  }
+                  
+                  // Otherwise just standard text (Rules/Tips)
+                  return ListTile(
+                    leading: const Icon(Icons.arrow_right, color: Colors.indigo),
+                    title: Text(text, style: const TextStyle(height: 1.5)),
+                  );
+                },
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 }
+  
 
 // --- FEATURE 2: QUIZ SCREEN (100 Questions) ---
 class QuizScreen extends StatefulWidget {
