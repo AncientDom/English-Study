@@ -1,5 +1,5 @@
-name: afcat_prep
-description: AFCAT Ultimate Preparation App
+name: english_pro
+description: English Learning App V6
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,18 +10,16 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # State Management
-  provider: ^6.1.1
+  # Network & APIs
+  http: ^1.2.0
   
-  # Local Storage (For saving exam results)
-  shared_preferences: ^2.2.2
-  
-  # Date Formatting
-  intl: ^0.19.0
-  
-  # PDF Generation & Printing (New for V4)
+  # PDF Generation
   pdf: ^3.10.8
   printing: ^5.11.1
+  
+  # Utilities
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
