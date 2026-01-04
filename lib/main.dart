@@ -529,3 +529,169 @@ class _ReadingStudioState extends State<ReadingStudio> {
               padding: const EdgeInsets.all(16),
               children: [
                 const Text("Fill in the blanks:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
+// ==========================================
+// 7. SCREEN: EXAM HALL (Updated for Direct Printing)
+// ==========================================
+class ExamHall extends StatefulWidget {
+  const ExamHall({super.key});
+  @override
+  State<ExamHall> createState() => _ExamHallState();
+}
+
+class _ExamHallState extends State<ExamHall> {
+  List<Map<String, dynamic>>? _questions;
+  final Map<int, String> _answers = {};
+  bool _submitted = false;
+  Timer? _timer;
+  int _seconds = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startExam();
+  }
+
+  void _startExam() async {
+    _timer?.cancel();
+    setState(() => _questions = null);
+    
+    final q = await AppData.fetchMockTest();
+    if (q.isEmpty) {
+      // Fallback if API fails
+      q.add({"q": "Synonym of 'Abundant'?", "ans": "Plentiful", "options": ["Scarce", "Plentiful", "Tiny", "Weak"]});
+    }
+
+    setState(() {
+      _questions = q;
+      _submitted = false;
+      _answers.clear();
+      _seconds = q.length * 3 * 60; // 3 mins per Q
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_seconds > 0) {
+        setState(() => _seconds--);
+      } else {
+        _submit();
+      }
+    });
+  }
+
+  void _submit() {
+    _timer?.cancel();
+    setState(() => _submitted = true);
+  }
+
+  // UPDATED: Renamed to "Print" logic
+  Future<void> _printScore() async {
+    final pdf = pw.Document();
+    
+    // Create the layout for the printer
+    pdf.addPage(pw.MultiPage(build: (c) => [
+      pw.Header(level: 0, child: pw.Text("Mock Test Result")),
+      pw.Paragraph(text: "Date: ${DateTime.now().toString().split('.')[0]}"),
+      pw.Table.fromTextArray(data: <List<String>>[
+        <String>['Question', 'Your Answer', 'Correct'],
+        ...List.generate(_questions!.length, (i) => [
+          _questions![i]['q'], 
+          _answers[i] ?? "-", 
+          _questions![i]['ans']
+        ])
+      ])
+    ]));
+
+    // Open the Phone's Print Dialog directly
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+      name: 'Exam_Result_Print'
+    );
+  }
+
+  String get _timerText {
+    int m = _seconds ~/ 60;
+    int s = _seconds % 60;
+    return "${m.toString().padLeft(2,'0')}:${s.toString().padLeft(2,'0')}";
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_questions == null) return const Center(child: CircularProgressIndicator());
+
+    if (_submitted) {
+      int score = 0;
+      for (int i=0; i<_questions!.length; i++) {
+        if (_answers[i] == _questions![i]['ans']) score++;
+      }
+
+      return Scaffold(
+        appBar: AppBar(title: const Text("Result")),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.emoji_events, color: Colors.amber, size: 80),
+              Text("Score: $score / ${_questions!.length}", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              
+              // UPDATED BUTTON: Print Icon & Text
+              ElevatedButton.icon(
+                icon: const Icon(Icons.print), 
+                label: const Text("Print Result"), 
+                onPressed: _printScore
+              ),
+              
+              const SizedBox(height: 10),
+              TextButton(onPressed: _startExam, child: const Text("Take New Test"))
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Time: $_timerText"),
+        backgroundColor: _seconds < 60 ? Colors.red : Colors.indigo,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              itemCount: _questions!.length,
+              separatorBuilder: (c,i) => const Divider(),
+              itemBuilder: (c,i) {
+                final q = _questions![i];
+                return ListTile(
+                  title: Text("Q${i+1}: ${q['q']}"),
+                  subtitle: Column(
+                    children: q['options'].map<Widget>((o) => RadioListTile(
+                      title: Text(o), 
+                      value: o.toString(), 
+                      groupValue: _answers[i], 
+                      onChanged: (v) => setState(() => _answers[i] = v.toString())
+                    )).toList(),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(50)),
+              onPressed: _submit,
+              child: const Text("SUBMIT EXAM"),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+                
