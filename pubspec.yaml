@@ -10,15 +10,18 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Networking (Required for AI)
+  # Networking
   http: ^1.2.0
 
-  # Local Storage (Required for History)
+  # Local Storage
   shared_preferences: ^2.2.2
 
-  # PDF & Printing (Required for Exam Results)
+  # PDF & Printing
   pdf: ^3.10.8
   printing: ^5.11.1
+
+  # Permissions (NEW)
+  permission_handler: ^11.3.0
 
   # Icons
   cupertino_icons: ^1.0.6
