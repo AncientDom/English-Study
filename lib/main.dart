@@ -12,7 +12,7 @@ import 'package:printing/printing.dart';
 // ==========================================
 
 // TODO: GET YOUR KEY HERE: https://aistudio.google.com/app/apikey
-const String _apiKey = "PASTE_YOUR_GEMINI_KEY_HERE"; 
+const String _apiKey = "AIzaSyBfyXr67_f6C_WTDrPIoMYEbCBrJB08mLg"; 
 
 void main() {
   runApp(const MyApp());
