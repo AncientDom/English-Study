@@ -11,7 +11,7 @@ import 'package:printing/printing.dart';
 // 1. CONFIGURATION & AI ENGINE
 // ==========================================
 
-// YOUR API KEY INTEGRATED
+// YOUR API KEY
 const String _apiKey = "AIzaSyCvIGSWr1xqh6t7GI5gmEhBnZ_E3XJBSV4"; 
 
 void main() {
@@ -80,34 +80,37 @@ class AppData {
     return null;
   }
 
-  // --- C. EXAM FETCHER (OpenTrivia) ---
+  // --- C. EXAM FETCHER (UPDATED: Uses AI now) ---
   static Future<List<Map<String, dynamic>>> fetchMockTest() async {
-    try {
-      final url = Uri.parse("https://opentdb.com/api.php?amount=10&category=10&type=multiple");
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        List<Map<String, dynamic>> qs = [];
-        for (var item in data['results']) {
-          List<String> opts = List<String>.from(item['incorrect_answers']);
-          opts.add(item['correct_answer']);
-          opts.shuffle();
-          qs.add({
-            "q": _clean(item['question']),
-            "ans": _clean(item['correct_answer']),
-            "options": opts.map((e) => _clean(e)).toList()
+    // UPDATED PROMPT: Specific request for Grammar/Verbs/Communication
+    final prompt = "Generate 10 multiple-choice questions for an English Exam. Topics: English Grammar, Verbs Usage, Tenses, and Communication Skills. Format: JSON Array with keys: 'q', 'ans' (correct string), 'options' (list of 4 strings). Do not include markdown formatting like ```json.";
+    
+    final res = await askGemini(prompt);
+    
+    if (res != null) {
+      try {
+        String cleanJson = res.replaceAll("```json", "").replaceAll("```", "").trim();
+        List<dynamic> data = jsonDecode(cleanJson);
+        
+        List<Map<String, dynamic>> questions = [];
+        for (var item in data) {
+          questions.add({
+            "q": item['q'],
+            "ans": item['ans'],
+            "options": List<String>.from(item['options'])
           });
         }
-        return qs;
+        return questions;
+      } catch (e) {
+        debugPrint("AI Exam Parse Error: $e");
       }
-    } catch (e) {
-      debugPrint("Quiz API Error: $e");
     }
-    return [];
-  }
 
-  static String _clean(String txt) {
-    return txt.replaceAll("&quot;", '"').replaceAll("&#039;", "'").replaceAll("&amp;", "&");
+    // Fallback if AI fails (Basic Grammar)
+    return [
+      {"q": "Choose the correct verb: She ___ to the market.", "ans": "went", "options": ["gone", "went", "go", "going"]},
+      {"q": "Effective communication requires...", "ans": "Listening", "options": ["Listening", "Shouting", "Ignoring", "Sleeping"]},
+    ];
   }
 }
 
@@ -435,7 +438,7 @@ class _ReadingStudioState extends State<ReadingStudio> {
 }
 
 // ==========================================
-// 7. SCREEN: EXAM HALL (With PRINT Logic)
+// 7. SCREEN: EXAM HALL (Fixed: Grammar/Verbs)
 // ==========================================
 class ExamHall extends StatefulWidget {
   const ExamHall({super.key});
@@ -460,11 +463,9 @@ class _ExamHallState extends State<ExamHall> {
     _timer?.cancel();
     setState(() => _questions = null);
     
+    // Now fetches AI Generated Grammar Questions
     final q = await AppData.fetchMockTest();
-    if (q.isEmpty) {
-      q.add({"q": "Synonym of 'Abundant'?", "ans": "Plentiful", "options": ["Scarce", "Plentiful", "Tiny", "Weak"]});
-    }
-
+    
     setState(() {
       _questions = q;
       _submitted = false;
@@ -540,7 +541,6 @@ class _ExamHallState extends State<ExamHall> {
               Text("Score: $score / ${_questions!.length}", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               
-              // PRINT BUTTON
               ElevatedButton.icon(
                 icon: const Icon(Icons.print), 
                 label: const Text("Print Result"), 
