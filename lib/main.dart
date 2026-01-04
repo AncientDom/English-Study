@@ -63,7 +63,7 @@ class AppData {
 
   // --- B. AI FETCHER (Gemini) ---
   static Future<String?> askGemini(String prompt) async {
-    if (_apiKey == "PASTE_YOUR_GEMINI_KEY_HERE") return null; // Key safety check
+    if (_apiKey == "AIzaSyCvIGSWr1xqh6t7GI5gmEhBnZ_E3XJBSV4") return null; // Key safety check
 
     try {
       final url = Uri.parse("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$_apiKey");
