@@ -1,49 +1,35 @@
 name: Build Flutter APK
-
-on:
-  push:
-    branches: [ "main" ]
-
+on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
+      # USE V4 ACTIONS (Latest Standard)
       - uses: actions/checkout@v4
-
+      
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-
+          
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
-          channel: 'stable'
+          
+      - run: flutter create . --project-name=english_pro --org=com.example
+      
+      # --- CRITICAL FIX FOR PDF/PRINTING ---
+      # Forces Android to use Version 21 (Required for PDF features)
+      - run: |
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' android/app/build.gradle
+      # -------------------------------------
 
-      # 1. SCAFFOLDING: Ensure Android system files exist
-      - name: Create Project Scaffolding
-        run: flutter create . --project-name=english_pro --org=com.example
-
-      # 2. DEPENDENCIES: Install all the plugins we used in V6
-      - name: Install Dependencies
-        run: |
-          flutter pub add http
-          flutter pub add pdf
-          flutter pub add printing
-          flutter pub add provider
-          flutter pub add shared_preferences
-          flutter pub get
-
-      # 3. BUILD: Compile the APK
-      - name: Build APK
-        run: |
-          chmod +x android/gradlew
-          flutter build apk --debug --verbose
-
-      # 4. UPLOAD: Save the APK for you to download
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - run: flutter pub get
+      - run: flutter build apk --debug
+      
+      # USE V4 ARTIFACT UPLOAD
+      - uses: actions/upload-artifact@v4
         with:
           name: debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
