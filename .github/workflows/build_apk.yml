@@ -21,36 +21,27 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      # CLEANUP: Remove old conflicting files
-      - name: Clean Environment
-        run: |
-          rm -rf build android ios
-          flutter clean
-
-      # RE-CREATE: Generate fresh Android files
+      # 1. SCAFFOLDING: Ensure Android system files exist
       - name: Create Project Scaffolding
-        run: flutter create . --project-name=afcat_prep --org=com.example
+        run: flutter create . --project-name=english_pro --org=com.example
 
-      # ORGANIZE: Move main.dart to lib/
-      - name: Organize Files
-        run: |
-          mkdir -p lib
-          if [ -f "main.dart" ]; then
-            mv -f main.dart lib/
-          fi
-
-      # INSTALL: Get plugins
+      # 2. DEPENDENCIES: Install all the plugins we used in V6
       - name: Install Dependencies
         run: |
-          flutter pub add provider shared_preferences intl
+          flutter pub add http
+          flutter pub add pdf
+          flutter pub add printing
+          flutter pub add provider
+          flutter pub add shared_preferences
           flutter pub get
 
-      # BUILD: Run with --verbose to see specific errors
-      - name: Build APK (Verbose)
+      # 3. BUILD: Compile the APK
+      - name: Build APK
         run: |
           chmod +x android/gradlew
           flutter build apk --debug --verbose
 
+      # 4. UPLOAD: Save the APK for you to download
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
