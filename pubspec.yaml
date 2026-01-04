@@ -10,17 +10,20 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Networking (For Gemini AI & APIs)
+  # Networking
   http: ^1.2.0
 
-  # Local Storage (For History Saving)
+  # Local Storage
   shared_preferences: ^2.2.2
 
-  # PDF Generation (For Exam Results)
+  # PDF & Printing
   pdf: ^3.10.8
   printing: ^5.11.1
 
-  # Standard Icons
+  # Permissions (NEW)
+  permission_handler: ^11.3.0
+
+  # Icons
   cupertino_icons: ^1.0.6
 
 dev_dependencies:
