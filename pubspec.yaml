@@ -10,13 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Networking
+  # Networking (Required for AI)
   http: ^1.2.0
 
-  # Local Storage
+  # Local Storage (Required for History)
   shared_preferences: ^2.2.2
 
-  # PDF & Printing
+  # PDF & Printing (Required for Exam Results)
   pdf: ^3.10.8
   printing: ^5.11.1
 
@@ -30,4 +30,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
