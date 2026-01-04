@@ -1,0 +1,43 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      # NEW STEP: Generates the missing android/ and ios/ folders
+      - name: Create Project Scaffolding
+        run: flutter create . --project-name=afcat_prep
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      # Now this step will work because 'flutter create' made the file
+      - name: Fix Gradle Permissions
+        run: chmod +x android/gradlew
+
+      - name: Build APK
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          
