@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 // ==========================================
 // 1. CONFIGURATION & AI ENGINE
@@ -52,6 +51,7 @@ class AppData {
     {"word": "Candid", "hindi": "स्पष्टवादी", "syn": "Frank", "ant": "Deceptive", "use": "Be candid with me."},
   ];
 
+  // Simple Internet Check (No Plugin Needed)
   static Future<bool> checkInternet() async {
     try {
       final result = await InternetAddress.lookup('google.com');
@@ -61,13 +61,14 @@ class AppData {
     }
   }
 
-  // --- AI FETCHER (UPDATED MODEL) ---
+  // --- AI FETCHER (UPDATED to gemini-1.5-flash) ---
   static Future<String> askGemini(String prompt) async {
+    // 1. Check Internet First
     bool hasNet = await checkInternet();
-    if (!hasNet) return "ERROR: No Internet Connection.";
+    if (!hasNet) return "ERROR: No Internet Connection. Please turn on Wi-Fi or Data.";
 
     try {
-      // FIX: Changed 'gemini-pro' to 'gemini-1.5-flash' to fix 404 Error
+      // FIX: Changed model name to fix 404 error
       final url = Uri.parse("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey");
       final response = await http.post(
         url,
@@ -110,13 +111,13 @@ class AppData {
       }
     }
     return [
-      {"q": "Offline/Error Mode: Which word is a verb?", "ans": "Run", "options": ["Blue", "Run", "Happy", "Chair"]},
+      {"q": "Error Mode: Check your internet.", "ans": "Retry", "options": ["Retry", "Check Net", "Exit", "Help"]},
     ];
   }
 }
 
 // ==========================================
-// 3. MAIN NAVIGATION (WITH PERMISSIONS)
+// 3. MAIN NAVIGATION (WITH STARTUP CHECK)
 // ==========================================
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -136,27 +137,30 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _askPermissions());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startupCheck());
   }
 
-  // --- NEW PERMISSION LOGIC ---
-  Future<void> _askPermissions() async {
-    // 1. Ask for Storage & Photos (For Android 13+)
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.storage,
-      Permission.photos,
-      Permission.manageExternalStorage, // For older androids
-    ].request();
-
-    // 2. Check Internet
+  void _startupCheck() async {
     bool isOnline = await AppData.checkInternet();
     if (!isOnline && mounted) {
-      _showError("No Internet", "Please enable data to use AI features.");
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => AlertDialog(
+          title: const Text("No Internet Connection"),
+          content: const Text("This app requires an active Internet connection to use AI features. Please enable Mobile Data or Wi-Fi."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(c);
+                _startupCheck(); // Retry check
+              }, 
+              child: const Text("RETRY")
+            )
+          ],
+        )
+      );
     }
-  }
-
-  void _showError(String title, String msg) {
-    showDialog(context: context, builder: (c) => AlertDialog(title: Text(title), content: Text(msg), actions: [TextButton(onPressed: ()=>Navigator.pop(c), child: const Text("OK"))]));
   }
 
   @override
@@ -582,4 +586,4 @@ class _ExamHallState extends State<ExamHall> {
                 final q = _questions![i];
                 return ListTile(
                   title: Text("Q${i+1}: ${q['q']}"),
-                  subtitle: Column(children: q['options'].map<Widget>((o) => RadioListTile(title: 
+                  subtitle: Column(children: q['options'].map<Widget>((o) => RadioListTile(title: Text(o), value:
