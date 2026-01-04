@@ -1,0 +1,59 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      # CLEANUP: Remove old conflicting files
+      - name: Clean Environment
+        run: |
+          rm -rf build android ios
+          flutter clean
+
+      # RE-CREATE: Generate fresh Android files
+      - name: Create Project Scaffolding
+        run: flutter create . --project-name=afcat_prep --org=com.example
+
+      # ORGANIZE: Move main.dart to lib/
+      - name: Organize Files
+        run: |
+          mkdir -p lib
+          if [ -f "main.dart" ]; then
+            mv -f main.dart lib/
+          fi
+
+      # INSTALL: Get plugins
+      - name: Install Dependencies
+        run: |
+          flutter pub add provider shared_preferences intl
+          flutter pub get
+
+      # BUILD: Run with --verbose to see specific errors
+      - name: Build APK (Verbose)
+        run: |
+          chmod +x android/gradlew
+          flutter build apk --debug --verbose
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          
