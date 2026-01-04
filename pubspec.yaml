@@ -1,5 +1,5 @@
 name: english_pro
-description: English Learning App V6
+description: English Learning App AI V9
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,21 +9,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Networking (For Gemini AI & APIs)
   http: ^1.2.0
+
+  # Local Storage (For History Saving)
   shared_preferences: ^2.2.2
+
+  # PDF Generation (For Exam Results)
   pdf: ^3.10.8
   printing: ^5.11.1
-  
-  # Network & APIs
-  http: ^1.2.0
-  
-  # PDF Generation
-  pdf: ^3.10.8
-  printing: ^5.11.1
-  
-  # Utilities
-  provider: ^6.1.1
-  shared_preferences: ^2.2.2
+
+  # Standard Icons
+  cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_test:
