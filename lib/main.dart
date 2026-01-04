@@ -11,7 +11,7 @@ import 'package:printing/printing.dart';
 // 1. CONFIGURATION & AI ENGINE
 // ==========================================
 
-// TODO: GET YOUR KEY HERE: https://aistudio.google.com/app/apikey
+// YOUR API KEY INTEGRATED
 const String _apiKey = "AIzaSyCvIGSWr1xqh6t7GI5gmEhBnZ_E3XJBSV4"; 
 
 void main() {
@@ -50,9 +50,6 @@ class AppData {
     {"word": "Abate", "hindi": "रोकथाम करना", "syn": "Lessen", "ant": "Increase", "use": "The storm abated."},
     {"word": "Benevolent", "hindi": "परोपकारी", "syn": "Kind", "ant": "Cruel", "use": "A benevolent leader."},
     {"word": "Candid", "hindi": "स्पष्टवादी", "syn": "Frank", "ant": "Deceptive", "use": "Be candid with me."},
-    {"word": "Diligent", "hindi": "मेहनती", "syn": "Hardworking", "ant": "Lazy", "use": "A diligent student."},
-    {"word": "Eloquent", "hindi": "सुवक्ता", "syn": "Fluent", "ant": "Inarticulate", "use": "Eloquent speech."},
-    // ... (You can add your 20 offline words here)
   ];
 
   static final List<Map<String, String>> idioms = [
@@ -63,8 +60,6 @@ class AppData {
 
   // --- B. AI FETCHER (Gemini) ---
   static Future<String?> askGemini(String prompt) async {
-    if (_apiKey == "AIzaSyCvIGSWr1xqh6t7GI5gmEhBnZ_E3XJBSV4") return null; // Key safety check
-
     try {
       final url = Uri.parse("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$_apiKey");
       final response = await http.post(
@@ -77,7 +72,6 @@ class AppData {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Extracting text from deep JSON structure
         return data['candidates'][0]['content']['parts'][0]['text'];
       }
     } catch (e) {
@@ -138,7 +132,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _idx, children: _screens), // Keeps state alive
+      body: IndexedStack(index: _idx, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _idx,
@@ -176,7 +170,6 @@ class _VocabStudioState extends State<VocabStudio> {
     _loadHistory();
   }
 
-  // 1. Load from Phone Memory or Bedrock
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final String? saved = prefs.getString('vocab_history');
@@ -190,41 +183,32 @@ class _VocabStudioState extends State<VocabStudio> {
     }
   }
 
-  // 2. Fetch New Words from AI
   Future<void> _fetchNewWords() async {
     setState(() => _loading = true);
-    final prompt = "Generate 5 important advanced English words for competitive exams. Output ONLY a JSON array with keys: word, hindi, syn, ant, use. Do not include markdown formatting.";
+    final prompt = "Generate 5 important advanced English words. Output JSON array with keys: word, hindi, syn, ant, use. No markdown.";
     
     final result = await AppData.askGemini(prompt);
     
     if (result != null) {
       try {
-        // Clean markdown if AI adds it
         String cleanJson = result.replaceAll("```json", "").replaceAll("```", "").trim();
         List<dynamic> newWords = jsonDecode(cleanJson);
-        
         setState(() {
           for (var item in newWords) {
-            _vocabList.insert(0, Map<String, String>.from(item)); // Add to top
+            _vocabList.insert(0, Map<String, String>.from(item));
           }
         });
-        
-        // Save to History
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('vocab_history', jsonEncode(_vocabList));
-        
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Parsing Error: $e")));
+        debugPrint("Error: $e");
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("AI Connection Failed (Check Key/Internet)")));
     }
     setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Search Logic
     final displayList = _vocabList.where((e) => 
       e['word']!.toLowerCase().contains(_searchCtrl.text.toLowerCase())
     ).toList();
@@ -236,7 +220,6 @@ class _VocabStudioState extends State<VocabStudio> {
           IconButton(
             icon: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white)) : const Icon(Icons.cloud_sync),
             onPressed: _loading ? null : _fetchNewWords,
-            tooltip: "Fetch New Words",
           )
         ],
       ),
@@ -248,11 +231,9 @@ class _VocabStudioState extends State<VocabStudio> {
               controller: _searchCtrl,
               onChanged: (v) => setState((){}),
               decoration: const InputDecoration(
-                hintText: "Search Database...",
+                hintText: "Search...",
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white
               ),
             ),
           ),
@@ -263,22 +244,19 @@ class _VocabStudioState extends State<VocabStudio> {
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
                   headingRowColor: MaterialStateProperty.all(Colors.indigo.shade50),
-                  dataRowMinHeight: 60,
-                  dataRowMaxHeight: 100, // Allow wrapping
-                  columnSpacing: 25,
                   columns: const [
-                    DataColumn(label: Text("WORD", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("HINDI", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("SYNONYM", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("ANTONYM", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("SENTENCE", style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text("WORD")),
+                    DataColumn(label: Text("HINDI")),
+                    DataColumn(label: Text("SYNONYM")),
+                    DataColumn(label: Text("ANTONYM")),
+                    DataColumn(label: Text("SENTENCE")),
                   ],
                   rows: displayList.map((d) => DataRow(cells: [
-                    DataCell(Text(d['word']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                    DataCell(Text(d['word']!, style: const TextStyle(fontWeight: FontWeight.bold))),
                     DataCell(Text(d['hindi']!, style: const TextStyle(color: Colors.deepOrange))),
-                    DataCell(SizedBox(width: 100, child: Text(d['syn']!, overflow: TextOverflow.visible))),
-                    DataCell(SizedBox(width: 100, child: Text(d['ant']!, overflow: TextOverflow.visible))),
-                    DataCell(SizedBox(width: 200, child: Text(d['use']!, style: const TextStyle(fontStyle: FontStyle.italic), overflow: TextOverflow.visible))),
+                    DataCell(Text(d['syn']!)),
+                    DataCell(Text(d['ant']!)),
+                    DataCell(Text(d['use']!)),
                   ])).toList(),
                 ),
               ),
@@ -305,10 +283,9 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
   String _checkResult = "";
   bool _checking = false;
 
-  // The Skeleton Menu
   final Map<String, List<String>> _topics = {
-    "Tenses": ["Present Simple", "Present Continuous", "Past Simple", "Future Simple"],
-    "Parts of Speech": ["Noun", "Pronoun", "Verb", "Adjective", "Adverb"],
+    "Tenses": ["Present Simple", "Present Continuous", "Past Simple"],
+    "Parts of Speech": ["Noun", "Pronoun", "Verb", "Adjective"],
     "Voice": ["Active Voice", "Passive Voice"]
   };
 
@@ -318,30 +295,23 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
     _tabController = TabController(length: 2, vsync: this);
   }
 
-  // AI Content Fetcher
   void _openTopic(String topic) async {
-    // Check Cache logic (Simplified for demo)
     final prefs = await SharedPreferences.getInstance();
     String? content = prefs.getString('grammar_$topic');
 
     if (content == null) {
-      // Fetch from AI
       showDialog(context: context, barrierDismissible: false, builder: (c) => const Center(child: CircularProgressIndicator()));
-      
-      final prompt = "Explain English Grammar topic: '$topic'. Provide output in this format: Definition: [Def], Rules: [Rules], Examples: [Ex1, Ex2]. Keep it concise.";
+      final prompt = "Explain grammar topic: '$topic'. Format: Definition, Rules, Examples.";
       final aiRes = await AppData.askGemini(prompt);
-      
-      Navigator.pop(context); // Close loader
-
+      Navigator.pop(context);
       if (aiRes != null) {
         content = aiRes;
-        prefs.setString('grammar_$topic', aiRes); // Save
+        prefs.setString('grammar_$topic', aiRes);
       } else {
-        content = "Could not fetch data. Check internet connection.";
+        content = "Error fetching data.";
       }
     }
     
-    // Show Content
     showModalBottomSheet(
       context: context, 
       isScrollControlled: true,
@@ -351,10 +321,9 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(topic, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo)),
+            Text(topic, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const Divider(),
-            Flexible(child: SingleChildScrollView(child: Text(content!, style: const TextStyle(fontSize: 16, height: 1.5)))),
-            const SizedBox(height: 20),
+            Flexible(child: SingleChildScrollView(child: Text(content!))),
           ],
         ),
       )
@@ -362,13 +331,10 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
   }
 
   void _checkGrammar() async {
-    if (_checkCtrl.text.isEmpty) return;
     setState(() { _checking = true; _checkResult = ""; });
-    
-    final prompt = "Correct the grammar of this sentence: '${_checkCtrl.text}'. Provide only the corrected sentence. If correct, say 'Correct'.";
+    final prompt = "Correct grammar: '${_checkCtrl.text}'. Only show corrected sentence.";
     final res = await AppData.askGemini(prompt);
-    
-    setState(() { _checking = false; _checkResult = res ?? "Error connecting to AI"; });
+    setState(() { _checking = false; _checkResult = res ?? "Error"; });
   }
 
   @override
@@ -385,56 +351,26 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab 1: The Book (Skeleton)
           ListView(
-            padding: const EdgeInsets.all(16),
             children: _topics.entries.map((entry) {
               return ExpansionTile(
                 title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold)),
                 children: entry.value.map((subTopic) => ListTile(
                   title: Text(subTopic),
-                  leading: const Icon(Icons.bookmark_border, color: Colors.indigo),
                   onTap: () => _openTopic(subTopic),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  leading: const Icon(Icons.bookmark, color: Colors.indigo),
                 )).toList(),
               );
             }).toList(),
           ),
-          
-          // Tab 2: Live Checker
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                TextField(
-                  controller: _checkCtrl,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: "Type a sentence to check...",
-                    border: OutlineInputBorder(),
-                    hintText: "e.g., He go to school everyday."
-                  ),
-                ),
+                TextField(controller: _checkCtrl, maxLines: 3, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: "Type sentence...")),
                 const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: _checking ? null : _checkGrammar,
-                  icon: const Icon(Icons.spellcheck),
-                  label: _checking ? const Text("Checking...") : const Text("Check Grammar"),
-                ),
-                const SizedBox(height: 20),
-                if (_checkResult.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    width: double.infinity,
-                    decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Result:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                        Text(_checkResult, style: const TextStyle(fontSize: 18)),
-                      ],
-                    ),
-                  )
+                ElevatedButton(onPressed: _checking ? null : _checkGrammar, child: const Text("Check Grammar")),
+                if (_checkResult.isNotEmpty) Text("Result: $_checkResult", style: const TextStyle(fontSize: 18, color: Colors.green))
               ],
             ),
           )
@@ -454,29 +390,14 @@ class ReadingStudio extends StatefulWidget {
 }
 
 class _ReadingStudioState extends State<ReadingStudio> {
-  // Passage Data
-  String _passageTitle = "The Sample Story";
-  String _passageBody = "This is a sample story to ensure the app is never empty. Click 'Refresh' to generate a new unique story from AI.";
-  List<Map<String, dynamic>> _passageQA = [
-    {"q": "What is this?", "a": "A sample story"}
-  ];
-  bool _loadingPassage = false;
+  String _passageTitle = "Sample Story";
+  String _passageBody = "Click Refresh to generate a story.";
+  List<Map<String, dynamic>> _passageQA = [];
+  bool _loading = false;
 
-  // Idioms Data
-  final List<Map<String, String>> _idioms = AppData.idioms;
-
-  // Cloze Data (Simple static for demo, dynamic is complex)
-  final String _clozeText = "India is a (1) _____ country with (2) _____ cultures.";
-  final Map<int, List<String>> _clozeOptions = {1: ["small", "vast", "tiny"], 2: ["diverse", "single", "no"]};
-  final Map<int, String> _clozeAnswers = {1: "vast", 2: "diverse"};
-  final Map<int, String> _userClozeSel = {};
-  bool _clozeVerified = false;
-
-  // AI Passage Generator
   void _generatePassage() async {
-    setState(() => _loadingPassage = true);
-    final prompt = "Write a short 100-word interesting non-fiction story. Then provide 2 multiple choice questions based on it. Output JSON keys: title, body, qa: [{q, a}]. No markdown.";
-    
+    setState(() => _loading = true);
+    final prompt = "Write a short story. Provide 2 multiple choice questions. Output JSON keys: title, body, qa: [{q, a}]. No markdown.";
     final res = await AppData.askGemini(prompt);
     if (res != null) {
       try {
@@ -486,51 +407,35 @@ class _ReadingStudioState extends State<ReadingStudio> {
           _passageBody = data['body'];
           _passageQA = List<Map<String, dynamic>>.from(data['qa']);
         });
-      } catch (e) {
-        debugPrint("Passage Parse Error: $e");
-      }
+      } catch (e) { debugPrint("Parse Error: $e"); }
     }
-    setState(() => _loadingPassage = false);
+    setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Reading Library"),
-          bottom: const TabBar(labelColor: Colors.white, tabs: [Tab(text: "Passage"), Tab(text: "Cloze"), Tab(text: "Idioms")]),
-          actions: [
-            IconButton(icon: const Icon(Icons.refresh), onPressed: _generatePassage, tooltip: "New Story")
-          ],
-        ),
-        body: TabBarView(
-          children: [
-            // Tab 1: Passage
-            ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (_loadingPassage) const LinearProgressIndicator(),
-                Text(_passageTitle, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo)),
-                const SizedBox(height: 10),
-                Text(_passageBody, style: const TextStyle(fontSize: 16, height: 1.6)),
-                const Divider(height: 40),
-                const Text("Comprehension Check:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                ..._passageQA.map((qa) => ListTile(
-                  title: Text("Q: ${qa['q']}", style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text("Ans: ${qa['a']}", style: const TextStyle(color: Colors.green)),
-                )).toList()
-              ],
-            ),
-            
-            // Tab 2: Cloze
-            ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                const Text("Fill in the blanks:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
+    return Scaffold(
+      appBar: AppBar(title: const Text("Reading Studio"), actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _generatePassage)]),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (_loading) const LinearProgressIndicator(),
+          Text(_passageTitle, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Text(_passageBody, style: const TextStyle(fontSize: 16)),
+          const Divider(),
+          ..._passageQA.map((qa) => ListTile(
+            title: Text("Q: ${qa['q']}"),
+            subtitle: Text("Ans: ${qa['a']}", style: const TextStyle(color: Colors.green)),
+          )).toList()
+        ],
+      ),
+    );
+  }
+}
+
 // ==========================================
-// 7. SCREEN: EXAM HALL (Updated for Direct Printing)
+// 7. SCREEN: EXAM HALL (With PRINT Logic)
 // ==========================================
 class ExamHall extends StatefulWidget {
   const ExamHall({super.key});
@@ -557,7 +462,6 @@ class _ExamHallState extends State<ExamHall> {
     
     final q = await AppData.fetchMockTest();
     if (q.isEmpty) {
-      // Fallback if API fails
       q.add({"q": "Synonym of 'Abundant'?", "ans": "Plentiful", "options": ["Scarce", "Plentiful", "Tiny", "Weak"]});
     }
 
@@ -582,11 +486,9 @@ class _ExamHallState extends State<ExamHall> {
     setState(() => _submitted = true);
   }
 
-  // UPDATED: Renamed to "Print" logic
   Future<void> _printScore() async {
     final pdf = pw.Document();
     
-    // Create the layout for the printer
     pdf.addPage(pw.MultiPage(build: (c) => [
       pw.Header(level: 0, child: pw.Text("Mock Test Result")),
       pw.Paragraph(text: "Date: ${DateTime.now().toString().split('.')[0]}"),
@@ -600,10 +502,9 @@ class _ExamHallState extends State<ExamHall> {
       ])
     ]));
 
-    // Open the Phone's Print Dialog directly
     await Printing.layoutPdf(
       onLayout: (format) async => pdf.save(),
-      name: 'Exam_Result_Print'
+      name: 'Exam_Result'
     );
   }
 
@@ -639,7 +540,7 @@ class _ExamHallState extends State<ExamHall> {
               Text("Score: $score / ${_questions!.length}", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               
-              // UPDATED BUTTON: Print Icon & Text
+              // PRINT BUTTON
               ElevatedButton.icon(
                 icon: const Icon(Icons.print), 
                 label: const Text("Print Result"), 
@@ -694,4 +595,3 @@ class _ExamHallState extends State<ExamHall> {
     );
   }
 }
-                
