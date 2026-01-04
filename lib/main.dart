@@ -11,7 +11,6 @@ import 'package:printing/printing.dart';
 // 1. CONFIGURATION & AI ENGINE
 // ==========================================
 
-// YOUR API KEY
 const String _apiKey = "AIzaSyCvIGSWr1xqh6t7GI5gmEhBnZ_E3XJBSV4"; 
 
 void main() {
@@ -42,24 +41,17 @@ class MyApp extends StatelessWidget {
 }
 
 // ==========================================
-// 2. DATA SERVICE (THE BRAIN)
+// 2. DATA SERVICE (DIAGNOSTIC MODE)
 // ==========================================
 class AppData {
-  // --- A. BEDROCK DATA (Offline Backup) ---
   static final List<Map<String, String>> bedrockVocab = [
     {"word": "Abate", "hindi": "रोकथाम करना", "syn": "Lessen", "ant": "Increase", "use": "The storm abated."},
     {"word": "Benevolent", "hindi": "परोपकारी", "syn": "Kind", "ant": "Cruel", "use": "A benevolent leader."},
     {"word": "Candid", "hindi": "स्पष्टवादी", "syn": "Frank", "ant": "Deceptive", "use": "Be candid with me."},
   ];
 
-  static final List<Map<String, String>> idioms = [
-    {"phrase": "Break the ice", "hindi": "बातचीत शुरू करना", "meaning": "Start a conversation"},
-    {"phrase": "Piece of cake", "hindi": "बहुत आसान", "meaning": "Very easy task"},
-    {"phrase": "Miss the boat", "hindi": "मौका गंवाना", "meaning": "Miss an opportunity"},
-  ];
-
-  // --- B. AI FETCHER (Gemini) ---
-  static Future<String?> askGemini(String prompt) async {
+  // UPDATED: Now returns detailed error messages for debugging
+  static Future<String> askGemini(String prompt) async {
     try {
       final url = Uri.parse("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=$_apiKey");
       final response = await http.post(
@@ -72,44 +64,39 @@ class AppData {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['candidates'] == null || data['candidates'].isEmpty) {
+          return "ERROR: AI returned no data (Safety Block).";
+        }
         return data['candidates'][0]['content']['parts'][0]['text'];
+      } else {
+        return "ERROR: Server ${response.statusCode}. Message: ${response.body}";
       }
     } catch (e) {
-      debugPrint("AI Error: $e");
+      // This catches the 'No Internet' permission error
+      return "ERROR: Connection Failed. Details: $e";
     }
-    return null;
   }
 
-  // --- C. EXAM FETCHER (UPDATED: Uses AI now) ---
   static Future<List<Map<String, dynamic>>> fetchMockTest() async {
-    // UPDATED PROMPT: Specific request for Grammar/Verbs/Communication
-    final prompt = "Generate 10 multiple-choice questions for an English Exam. Topics: English Grammar, Verbs Usage, Tenses, and Communication Skills. Format: JSON Array with keys: 'q', 'ans' (correct string), 'options' (list of 4 strings). Do not include markdown formatting like ```json.";
-    
+    final prompt = "Generate 5 multiple-choice questions on English Grammar. Output JSON array keys: 'q', 'ans', 'options' (4 strings). No markdown.";
     final res = await askGemini(prompt);
     
-    if (res != null) {
+    if (!res.startsWith("ERROR")) {
       try {
         String cleanJson = res.replaceAll("```json", "").replaceAll("```", "").trim();
         List<dynamic> data = jsonDecode(cleanJson);
-        
-        List<Map<String, dynamic>> questions = [];
-        for (var item in data) {
-          questions.add({
-            "q": item['q'],
-            "ans": item['ans'],
-            "options": List<String>.from(item['options'])
-          });
-        }
-        return questions;
+        return data.map((item) => {
+          "q": item['q'],
+          "ans": item['ans'],
+          "options": List<String>.from(item['options'])
+        }).toList();
       } catch (e) {
-        debugPrint("AI Exam Parse Error: $e");
+        debugPrint("Parse Error: $e");
       }
     }
-
-    // Fallback if AI fails (Basic Grammar)
+    // Fallback
     return [
-      {"q": "Choose the correct verb: She ___ to the market.", "ans": "went", "options": ["gone", "went", "go", "going"]},
-      {"q": "Effective communication requires...", "ans": "Listening", "options": ["Listening", "Shouting", "Ignoring", "Sleeping"]},
+      {"q": "Error loading AI Exam. Try again.", "ans": "Ok", "options": ["Ok", "Retry", "Check Net", "Fail"]},
     ];
   }
 }
@@ -188,11 +175,14 @@ class _VocabStudioState extends State<VocabStudio> {
 
   Future<void> _fetchNewWords() async {
     setState(() => _loading = true);
-    final prompt = "Generate 5 important advanced English words. Output JSON array with keys: word, hindi, syn, ant, use. No markdown.";
+    final prompt = "Generate 5 advanced English words. Output JSON array keys: word, hindi, syn, ant, use. No markdown.";
     
     final result = await AppData.askGemini(prompt);
     
-    if (result != null) {
+    // DEBUG ALERT
+    if (result.startsWith("ERROR")) {
+      showDialog(context: context, builder: (c) => AlertDialog(title: const Text("Connection Error"), content: Text(result), actions: [TextButton(onPressed: ()=>Navigator.pop(c), child: const Text("OK"))]));
+    } else {
       try {
         String cleanJson = result.replaceAll("```json", "").replaceAll("```", "").trim();
         List<dynamic> newWords = jsonDecode(cleanJson);
@@ -233,11 +223,7 @@ class _VocabStudioState extends State<VocabStudio> {
             child: TextField(
               controller: _searchCtrl,
               onChanged: (v) => setState((){}),
-              decoration: const InputDecoration(
-                hintText: "Search...",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(hintText: "Search...", prefixIcon: Icon(Icons.search), border: OutlineInputBorder()),
             ),
           ),
           Expanded(
@@ -307,11 +293,16 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
       final prompt = "Explain grammar topic: '$topic'. Format: Definition, Rules, Examples.";
       final aiRes = await AppData.askGemini(prompt);
       Navigator.pop(context);
-      if (aiRes != null) {
+      
+      // DEBUG CHECK
+      if (aiRes.startsWith("ERROR")) {
+        showDialog(context: context, builder: (c) => AlertDialog(title: const Text("Error"), content: Text(aiRes), actions: [TextButton(onPressed: ()=>Navigator.pop(c), child: const Text("OK"))]));
+        return;
+      }
+
+      if (aiRes.isNotEmpty) {
         content = aiRes;
         prefs.setString('grammar_$topic', aiRes);
-      } else {
-        content = "Error fetching data.";
       }
     }
     
@@ -326,7 +317,7 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
           children: [
             Text(topic, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const Divider(),
-            Flexible(child: SingleChildScrollView(child: Text(content!))),
+            Flexible(child: SingleChildScrollView(child: Text(content ?? "No Data"))),
           ],
         ),
       )
@@ -337,7 +328,7 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
     setState(() { _checking = true; _checkResult = ""; });
     final prompt = "Correct grammar: '${_checkCtrl.text}'. Only show corrected sentence.";
     final res = await AppData.askGemini(prompt);
-    setState(() { _checking = false; _checkResult = res ?? "Error"; });
+    setState(() { _checking = false; _checkResult = res; });
   }
 
   @override
@@ -345,11 +336,7 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
     return Scaffold(
       appBar: AppBar(
         title: const Text("Grammar Studio"),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          tabs: const [Tab(text: "The Book"), Tab(text: "Live Checker")],
-        ),
+        bottom: TabBar(controller: _tabController, labelColor: Colors.white, tabs: const [Tab(text: "The Book"), Tab(text: "Live Checker")]),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -373,7 +360,13 @@ class _GrammarStudioState extends State<GrammarStudio> with SingleTickerProvider
                 TextField(controller: _checkCtrl, maxLines: 3, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: "Type sentence...")),
                 const SizedBox(height: 10),
                 ElevatedButton(onPressed: _checking ? null : _checkGrammar, child: const Text("Check Grammar")),
-                if (_checkResult.isNotEmpty) Text("Result: $_checkResult", style: const TextStyle(fontSize: 18, color: Colors.green))
+                if (_checkResult.isNotEmpty) 
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.all(10),
+                    color: _checkResult.startsWith("ERROR") ? Colors.red.shade100 : Colors.green.shade100,
+                    child: Text("Result: $_checkResult")
+                  )
               ],
             ),
           )
@@ -402,7 +395,11 @@ class _ReadingStudioState extends State<ReadingStudio> {
     setState(() => _loading = true);
     final prompt = "Write a short story. Provide 2 multiple choice questions. Output JSON keys: title, body, qa: [{q, a}]. No markdown.";
     final res = await AppData.askGemini(prompt);
-    if (res != null) {
+    
+    // DEBUG ALERT
+    if (res.startsWith("ERROR")) {
+      showDialog(context: context, builder: (c) => AlertDialog(title: const Text("Error"), content: Text(res), actions: [TextButton(onPressed: ()=>Navigator.pop(c), child: const Text("OK"))]));
+    } else {
       try {
         final data = jsonDecode(res.replaceAll("```json", "").replaceAll("```", "").trim());
         setState(() {
@@ -438,7 +435,7 @@ class _ReadingStudioState extends State<ReadingStudio> {
 }
 
 // ==========================================
-// 7. SCREEN: EXAM HALL (Fixed: Grammar/Verbs)
+// 7. SCREEN: EXAM HALL
 // ==========================================
 class ExamHall extends StatefulWidget {
   const ExamHall({super.key});
@@ -463,7 +460,6 @@ class _ExamHallState extends State<ExamHall> {
     _timer?.cancel();
     setState(() => _questions = null);
     
-    // Now fetches AI Generated Grammar Questions
     final q = await AppData.fetchMockTest();
     
     setState(() {
@@ -489,10 +485,8 @@ class _ExamHallState extends State<ExamHall> {
 
   Future<void> _printScore() async {
     final pdf = pw.Document();
-    
     pdf.addPage(pw.MultiPage(build: (c) => [
       pw.Header(level: 0, child: pw.Text("Mock Test Result")),
-      pw.Paragraph(text: "Date: ${DateTime.now().toString().split('.')[0]}"),
       pw.Table.fromTextArray(data: <List<String>>[
         <String>['Question', 'Your Answer', 'Correct'],
         ...List.generate(_questions!.length, (i) => [
@@ -502,11 +496,7 @@ class _ExamHallState extends State<ExamHall> {
         ])
       ])
     ]));
-
-    await Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-      name: 'Exam_Result'
-    );
+    await Printing.layoutPdf(onLayout: (f) async => pdf.save(), name: 'Result');
   }
 
   String get _timerText {
@@ -524,30 +514,24 @@ class _ExamHallState extends State<ExamHall> {
   @override
   Widget build(BuildContext context) {
     if (_questions == null) return const Center(child: CircularProgressIndicator());
+    if (_questions!.isNotEmpty && _questions![0]['q'].startsWith("Error")) {
+       return Scaffold(body: Center(child: Text(_questions![0]['q'], style: const TextStyle(color: Colors.red))));
+    }
 
     if (_submitted) {
       int score = 0;
       for (int i=0; i<_questions!.length; i++) {
         if (_answers[i] == _questions![i]['ans']) score++;
       }
-
       return Scaffold(
         appBar: AppBar(title: const Text("Result")),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.emoji_events, color: Colors.amber, size: 80),
               Text("Score: $score / ${_questions!.length}", style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              
-              ElevatedButton.icon(
-                icon: const Icon(Icons.print), 
-                label: const Text("Print Result"), 
-                onPressed: _printScore
-              ),
-              
-              const SizedBox(height: 10),
+              ElevatedButton.icon(icon: const Icon(Icons.print), label: const Text("Print Result"), onPressed: _printScore),
               TextButton(onPressed: _startExam, child: const Text("Take New Test"))
             ],
           ),
@@ -556,10 +540,7 @@ class _ExamHallState extends State<ExamHall> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Time: $_timerText"),
-        backgroundColor: _seconds < 60 ? Colors.red : Colors.indigo,
-      ),
+      appBar: AppBar(title: Text("Exam Hall (Grammar)"), actions: [Center(child: Padding(padding: const EdgeInsets.only(right: 16), child: Text(_timerText)))]),
       body: Column(
         children: [
           Expanded(
@@ -570,26 +551,12 @@ class _ExamHallState extends State<ExamHall> {
                 final q = _questions![i];
                 return ListTile(
                   title: Text("Q${i+1}: ${q['q']}"),
-                  subtitle: Column(
-                    children: q['options'].map<Widget>((o) => RadioListTile(
-                      title: Text(o), 
-                      value: o.toString(), 
-                      groupValue: _answers[i], 
-                      onChanged: (v) => setState(() => _answers[i] = v.toString())
-                    )).toList(),
-                  ),
+                  subtitle: Column(children: q['options'].map<Widget>((o) => RadioListTile(title: Text(o), value: o.toString(), groupValue: _answers[i], onChanged: (v) => setState(() => _answers[i] = v.toString()))).toList()),
                 );
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(50)),
-              onPressed: _submit,
-              child: const Text("SUBMIT EXAM"),
-            ),
-          )
+          Padding(padding: const EdgeInsets.all(8.0), child: ElevatedButton(onPressed: _submit, child: const Text("SUBMIT EXAM")))
         ],
       ),
     );
