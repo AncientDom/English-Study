@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+  pdf: ^3.10.8
+  printing: ^5.11.1
   
   # Network & APIs
   http: ^1.2.0
