@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- MAIN ENTRY POINT ---
 void main() {
   runApp(const MyApp());
 }
@@ -15,111 +14,67 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AFCAT English Prep',
+      title: 'AFCAT Prep',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         useMaterial3: true,
-        scaffoldBackgroundColor: Colors.grey[100],
       ),
       home: const HomeScreen(),
     );
   }
 }
 
-// --- DATA ENGINE (THE BRAIN) ---
+// --- 1. THE DATA ENGINE ---
 class AppData {
-  // --- REAL CONTENT DATABASE (Simulating "Whole Book") ---
-  
-  // VOCABULARY DATA
+  // Study Material Data
   static final List<String> antonyms = [
-    "Abate - Aggravate", "Absolve - Blame", "Acrimony - Courtesy", "Adversity - Prosperity",
-    "Alien - Native", "Allure - Repulse", "Amplify - Lessen", "Antipathy - Admiration",
-    "Apathy - Concern", "Arid - Fertile", "Authentic - Fake", "Audacity - Cowardice",
-    "Benevolent - Malevolent", "Barbarous - Civilized", "Bleak - Bright", "Brittle - Tough"
+    "Abate - Aggravate", "Absolve - Blame", "Acrimony - Courtesy", 
+    "Adversity - Prosperity", "Alien - Native", "Amplify - Lessen"
   ];
   
   static final List<String> synonyms = [
-    "Abstain - Refrain", "Acknowledge - Admit", "Aid - Help", "Adept - Skilled",
-    "Adorn - Decorate", "Affection - Love", "Agile - Quick", "Alleviate - Relieve",
-    "Ambition - Desire", "Anger - Fury", "Answer - Reply", "Approve - Accept"
+    "Abstain - Refrain", "Acknowledge - Admit", "Aid - Help", 
+    "Adept - Skilled", "Adorn - Decorate", "Agile - Quick"
   ];
 
   static final List<String> idioms = [
     "A hot potato - A controversial issue",
-    "Ball is in your court - It's your decision now",
-    "Beat around the bush - Avoiding the main topic",
-    "Best of both worlds - All the advantages",
-    "Bite off more than you can chew - Take on a task that is way too big",
-    "Blessing in disguise - A good thing that seemed bad at first",
-    "Burn the midnight oil - Work late into the night"
+    "Ball is in your court - It is your decision now",
+    "Beat around the bush - Avoiding the main topic"
   ];
 
-  // GRAMMAR DATA
-  static final List<String> errorRules = [
-    "Rule 1: Two singular subjects connected by 'and' require a PLURAL verb.\n(e.g., Gold and Silver ARE precious metals.)",
-    "Rule 2: If two singular nouns refer to the same person, the verb must be SINGULAR.\n(e.g., The poet and painter IS dead.)",
-    "Rule 3: 'One of' is always followed by a PLURAL noun and SINGULAR verb.\n(e.g., One of the boys IS missing.)",
-    "Rule 4: Words like 'Scarcely', 'Hardly' are followed by 'When'.\n(e.g., Scarcely had I entered the room WHEN the phone rang.)"
+  static final List<String> grammarRules = [
+    "Rule 1: Two singular subjects connected by 'and' require a PLURAL verb.",
+    "Rule 2: 'One of' is always followed by a PLURAL noun and SINGULAR verb."
   ];
 
-  static final List<String> prepositions = [
-    "Abide BY (a promise)", "Absorb IN (work)", "Account FOR (money)", "Accused OF (theft)",
-    "Accustomed TO (habits)", "Afraid OF (death)", "Agree WITH (a person)", "Agree TO (a proposal)",
-    "Aim AT (target)", "Angry WITH (person)", "Angry AT (something)", "Apologize TO (person)"
+  static final List<String> readingTips = [
+    "Tip 1: Read the questions first before the passage.",
+    "Tip 2: Eliminate options that are clearly wrong."
   ];
 
-  // READING DATA
-  static final List<String> clozeRules = [
-    "Tip 1: Read the whole passage first to get the 'tone' (Positive/Negative).",
-    "Tip 2: Identify the type of word missing (Noun, Verb, Adjective).",
-    "Tip 3: Look for linking words (However, Although, Moreover).",
-    "Tip 4: Eliminate options that don't fit the grammar context."
-  ];
-
-  // --- QUIZ DATA (Kept from before) ---
+  // Quiz Generator
   static List<Map<String, dynamic>> getQuestions(String topic) {
     List<Map<String, dynamic>> data = [];
+    // Add Real Questions
     if (topic == "Vocabulary") {
       data.add({"q": "Antonym of CANDID", "options": ["Frank", "Deceptive", "Honest", "Open"], "ans": 1});
       data.add({"q": "Synonym of ABATE", "options": ["Increase", "Reduce", "Observe", "Create"], "ans": 1});
-      // ... (Add more real questions here later)
-    } 
-    // Fill with mock data to ensure 100 questions exist
+    }
+    // Fill up to 100
     for (int i = data.length; i < 100; i++) {
       data.add({
-        "q": "Mock $topic Question #${i + 1}", 
-        "options": ["Option A", "Option B", "Option C", "Option D"], 
-        "ans": 0
+        "q": "Mock $topic Question #${i + 1}",
+        "options": ["Option A", "Option B", "Option C", "Option D"],
+        "ans": Random().nextInt(4)
       });
     }
     return data;
   }
 }
 
-  // 2. MOCK STUDY MATERIAL (Text Book Mode)
-  static const String vocabStudy = """
-  # Chapter 1: Antonyms
-  1. Abate - Aggravate
-  2. Candid - Deceptive
-  3. Banal - Original
-  
-  # Chapter 2: Idioms
-  * A hot potato: Speak of an issue which is mostly disputed.
-  * Ball is in your court: It is up to you to make the next decision.
-  """;
-
-  static const String grammarStudy = """
-  # Chapter 1: Subject Verb Agreement
-  * Rule 1: Two or more singular subjects connected by 'and' usually take a verb in the plural.
-  
-  # Chapter 2: Prepositions
-  * Died OF a disease (Died of Malaria).
-  * Died FROM a cause (Died from thirst).
-  """;
-}
-
-// --- HOME SCREEN ---
+// --- 2. HOME SCREEN ---
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -128,10 +83,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-
-  // Strict separation of tabs
-  static const List<Widget> _pages = <Widget>[
+  int _index = 0;
+  static const List<Widget> _pages = [
     SubjectDashboard(title: "Vocabulary", topic: "Vocabulary", color: Colors.indigo),
     SubjectDashboard(title: "Grammar", topic: "Grammar", color: Colors.teal),
     SubjectDashboard(title: "Reading", topic: "Reading", color: Colors.deepOrange),
@@ -140,27 +93,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('AFCAT English Prep'), 
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: _pages[_selectedIndex],
+      appBar: AppBar(title: const Text('AFCAT Prep'), elevation: 1),
+      body: _pages[_index],
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _index,
+        onTap: (i) => setState(() => _index = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.book), label: 'Vocab'),
           BottomNavigationBarItem(icon: Icon(Icons.rule), label: 'Grammar'),
           BottomNavigationBarItem(icon: Icon(Icons.article), label: 'Reading'),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.indigo,
-        onTap: (index) => setState(() => _selectedIndex = index),
       ),
     );
   }
 }
 
-// --- DASHBOARD (THE 4 BUTTONS) ---
+// --- 3. DASHBOARD ---
 class SubjectDashboard extends StatelessWidget {
   final String title;
   final String topic;
@@ -170,149 +118,82 @@ class SubjectDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            width: double.infinity,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(15)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-                const Text("Select an option below to start"),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Options
-          _buildOption(context, "Study Material", Icons.menu_book, () {
-             Navigator.push(context, MaterialPageRoute(builder: (_) => StudyReader(topic: topic)));
-          }),
-          _buildOption(context, "Daily Quiz (100 Qs)", Icons.flash_on, () {
-             Navigator.push(context, MaterialPageRoute(builder: (_) => QuizScreen(topic: topic)));
-          }),
-          _buildOption(context, "Exam (90 Mins)", Icons.timer, () {
-             Navigator.push(context, MaterialPageRoute(builder: (_) => const ExamScreen()));
-          }),
-          _buildOption(context, "View Answer Sheet", Icons.assignment, () {
-             Navigator.push(context, MaterialPageRoute(builder: (_) => const ResultScreen()));
-          }),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          child: Text(title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+        ),
+        const SizedBox(height: 20),
+        _btn(context, "Study Material", Icons.menu_book, () => 
+          Navigator.push(context, MaterialPageRoute(builder: (_) => StudyReader(topic: topic)))),
+        _btn(context, "Daily Quiz (100 Qs)", Icons.flash_on, () => 
+          Navigator.push(context, MaterialPageRoute(builder: (_) => QuizScreen(topic: topic)))),
+        _btn(context, "Exam (90 Mins)", Icons.timer, () => 
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ExamScreen()))),
+        _btn(context, "Answer Sheet", Icons.assignment, () => 
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ResultScreen()))),
+      ],
     );
   }
 
-  Widget _buildOption(BuildContext context, String text, IconData icon, VoidCallback onTap) {
+  Widget _btn(BuildContext context, String text, IconData icon, VoidCallback onTap) {
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: Icon(icon, color: color, size: 28),
-        title: Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        leading: Icon(icon, color: color),
+        title: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       ),
     );
   }
 }
 
-// --- FEATURE 1: STUDY MATERIAL (BOOK READER) ---
-class StudyReader extends StatelessWidget {
+// --- 4. STUDY MATERIAL (TABBED BOOK) ---
 class StudyReader extends StatelessWidget {
   final String topic;
   const StudyReader({super.key, required this.topic});
 
   @override
   Widget build(BuildContext context) {
-    // Define tabs based on topic
     List<String> tabs = [];
-    List<List<String>> content = [];
+    List<List<String>> data = [];
 
     if (topic == "Vocabulary") {
       tabs = ["Antonyms", "Synonyms", "Idioms"];
-      content = [AppData.antonyms, AppData.synonyms, AppData.idioms];
+      data = [AppData.antonyms, AppData.synonyms, AppData.idioms];
     } else if (topic == "Grammar") {
-      tabs = ["Error Rules", "Prepositions"];
-      content = [AppData.errorRules, AppData.prepositions];
+      tabs = ["Rules"];
+      data = [AppData.grammarRules];
     } else {
-      tabs = ["Cloze Test Tips"];
-      content = [AppData.clozeRules];
+      tabs = ["Tips"];
+      data = [AppData.readingTips];
     }
 
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
-          title: Text("$topic Study Book"),
-          backgroundColor: Colors.indigo,
-          foregroundColor: Colors.white,
-          bottom: TabBar(
-            isScrollable: true, // Allows many tabs to fit
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
-            tabs: tabs.map((t) => Tab(text: t)).toList(),
-          ),
-          actions: [
-            // The "Gather from Internet" Simulation
-            IconButton(
-              icon: const Icon(Icons.cloud_download),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Checking for new chapters online... (All up to date)"))
-                );
-              },
-            )
-          ],
+          title: Text("$topic Study"),
+          bottom: TabBar(tabs: tabs.map((t) => Tab(text: t)).toList()),
         ),
         body: TabBarView(
-          children: content.map((list) {
-            return Container(
-              color: Colors.white,
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: list.length,
-                separatorBuilder: (ctx, i) => const Divider(height: 1),
-                itemBuilder: (ctx, i) {
-                  // Format the text nicely
-                  final text = list[i];
-                  final parts = text.split("-");
-                  
-                  // If it's a "Word - Definition" format, style it boldly
-                  if (parts.length > 1) {
-                    return ListTile(
-                      title: Text(parts[0].trim(), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
-                      subtitle: Text(parts.sublist(1).join("-").trim()),
-                      leading: CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Colors.indigo.shade50,
-                        child: Text("${i+1}", style: const TextStyle(fontSize: 12)),
-                      ),
-                    );
-                  }
-                  
-                  // Otherwise just standard text (Rules/Tips)
-                  return ListTile(
-                    leading: const Icon(Icons.arrow_right, color: Colors.indigo),
-                    title: Text(text, style: const TextStyle(height: 1.5)),
-                  );
-                },
-              ),
-            );
-          }).toList(),
+          children: data.map((list) => ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: list.length,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (_, i) => Text(list[i], style: const TextStyle(fontSize: 16)),
+          )).toList(),
         ),
       ),
     );
   }
 }
-  
 
-// --- FEATURE 2: QUIZ SCREEN (100 Questions) ---
+// --- 5. QUIZ SCREEN ---
 class QuizScreen extends StatefulWidget {
   final String topic;
   const QuizScreen({super.key, required this.topic});
@@ -323,33 +204,33 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   late List<Map<String, dynamic>> questions;
-  
+
   @override
   void initState() {
     super.initState();
-    // Load 100 Questions specifically for this topic
     questions = AppData.getQuestions(widget.topic);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Daily Quiz (${questions.length})")),
-      body: ListView.separated(
+      appBar: AppBar(title: Text("${widget.topic} Quiz")),
+      body: ListView.builder(
         itemCount: questions.length,
-        separatorBuilder: (ctx, i) => const Divider(),
         itemBuilder: (ctx, i) {
           final q = questions[i];
-          return ExpansionTile(
-            title: Text("Q${i+1}: ${q['q']}", style: const TextStyle(fontWeight: FontWeight.w500)),
-            children: List.generate(4, (optIndex) {
-              final isCorrect = optIndex == q['ans'];
-              return ListTile(
-                leading: Text(["A","B","C","D"][optIndex], style: const TextStyle(fontWeight: FontWeight.bold)),
-                title: Text(q['options'][optIndex]),
-                trailing: isCorrect ? const Icon(Icons.check, color: Colors.green) : null,
-              );
-            }),
+          return Card(
+            margin: const EdgeInsets.all(8),
+            child: ExpansionTile(
+              title: Text("Q${i+1}: ${q['q']}"),
+              children: List.generate(4, (idx) => ListTile(
+                title: Text(q['options'][idx]),
+                leading: Icon(
+                  idx == q['ans'] ? Icons.check : Icons.circle_outlined,
+                  color: idx == q['ans'] ? Colors.green : Colors.grey,
+                ),
+              )),
+            ),
           );
         },
       ),
@@ -357,7 +238,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 }
 
-// --- FEATURE 3: EXAM SCREEN (With Timer & Saver) ---
+// --- 6. EXAM SCREEN ---
 class ExamScreen extends StatefulWidget {
   const ExamScreen({super.key});
 
@@ -366,186 +247,125 @@ class ExamScreen extends StatefulWidget {
 }
 
 class _ExamScreenState extends State<ExamScreen> {
-  int _timeLeft = 90 * 60; // 90 Minutes
+  int _seconds = 90 * 60;
   Timer? _timer;
-  int _currentIndex = 0;
-  final Map<int, int> _userAnswers = {};
-  late List<Map<String, dynamic>> _examQuestions;
+  final Map<int, int> _answers = {};
+  final List<Map<String, dynamic>> _questions = [
+    ...AppData.getQuestions("Vocabulary").take(10),
+    ...AppData.getQuestions("Grammar").take(10),
+    ...AppData.getQuestions("Reading").take(10),
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Mix questions for exam (30 Questions total)
-    _examQuestions = [
-      ...AppData.getQuestions("Vocabulary").take(10),
-      ...AppData.getQuestions("Grammar").take(10),
-      ...AppData.getQuestions("Reading").take(10),
-    ];
-    _startTimer();
-  }
-
-  void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_timeLeft > 0) setState(() => _timeLeft--);
-      else _submitExam();
+      if (_seconds > 0) setState(() => _seconds--);
+      else _submit();
     });
   }
 
-  Future<void> _submitExam() async {
+  Future<void> _submit() async {
     _timer?.cancel();
-    
-    // 1. Calculate Score
     int score = 0;
-    _userAnswers.forEach((index, ans) {
-      if (ans == _examQuestions[index]['ans']) score += 3;
+    _answers.forEach((i, ans) {
+      if (ans == _questions[i]['ans']) score += 3;
       else score -= 1;
     });
 
-    // 2. Prepare Detailed Report
-    Map<String, dynamic> report = {
+    final prefs = await SharedPreferences.getInstance();
+    final report = {
       "score": score,
-      "date": DateTime.now().toString(),
-      "total": _examQuestions.length,
-      "history": List.generate(_examQuestions.length, (i) {
-        return {
-          "q": _examQuestions[i]['q'],
-          "userOpt": _userAnswers[i], // Can be null if skipped
-          "correctOpt": _examQuestions[i]['ans'],
-          "options": _examQuestions[i]['options']
-        };
+      "total": _questions.length * 3,
+      "history": List.generate(_questions.length, (i) => {
+        "q": _questions[i]['q'],
+        "user": _answers[i],
+        "correct": _questions[i]['ans'],
+        "options": _questions[i]['options']
       })
     };
-
-    // 3. Save to Disk (Persistent)
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_exam_report', jsonEncode(report));
-
+    await prefs.setString('last_exam', jsonEncode(report));
+    
     if (mounted) {
-      Navigator.pop(context); // Close exam
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const ResultScreen())); // Show result
+      Navigator.pop(context);
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const ResultScreen()));
     }
   }
 
   @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_examQuestions.isEmpty) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    final q = _examQuestions[_currentIndex];
-
     return Scaffold(
       appBar: AppBar(
-        title: Text("Time: ${(_timeLeft ~/ 60).toString().padLeft(2,'0')}:${(_timeLeft % 60).toString().padLeft(2,'0')}"),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-        actions: [TextButton(onPressed: _submitExam, child: const Text("SUBMIT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))],
+        title: Text("Time: ${_seconds ~/ 60}:${(_seconds % 60).toString().padLeft(2, '0')}"),
+        actions: [TextButton(onPressed: _submit, child: const Text("SUBMIT"))],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text("Q${_currentIndex + 1}: ${q['q']}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: 4,
-              itemBuilder: (ctx, i) => RadioListTile(
-                value: i,
-                groupValue: _userAnswers[_currentIndex],
-                title: Text(q['options'][i]),
-                onChanged: (val) => setState(() => _userAnswers[_currentIndex] = val as int),
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: ListView.builder(
+        itemCount: _questions.length,
+        itemBuilder: (ctx, i) {
+          final q = _questions[i];
+          return Card(
+            margin: const EdgeInsets.all(8),
+            child: Column(
               children: [
-                ElevatedButton(onPressed: _currentIndex > 0 ? () => setState(() => _currentIndex--) : null, child: const Text("Previous")),
-                Text("${_currentIndex+1}/${_examQuestions.length}"),
-                ElevatedButton(onPressed: _currentIndex < _examQuestions.length - 1 ? () => setState(() => _currentIndex++) : null, child: const Text("Next")),
+                ListTile(title: Text("Q${i+1}: ${q['q']}")),
+                ...List.generate(4, (optIdx) => RadioListTile(
+                  value: optIdx,
+                  groupValue: _answers[i],
+                  onChanged: (v) => setState(() => _answers[i] = v as int),
+                  title: Text(q['options'][optIdx]),
+                ))
               ],
             ),
-          )
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-// --- FEATURE 4: ANSWER SHEET (DETAILED VIEW) ---
+// --- 7. RESULT SCREEN ---
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key});
 
-  Future<Map<String, dynamic>?> _loadReport() async {
+  Future<Map<String, dynamic>?> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? raw = prefs.getString('last_exam_report');
-    if (raw == null) return null;
-    return jsonDecode(raw);
+    final raw = prefs.getString('last_exam');
+    return raw != null ? jsonDecode(raw) : null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Answer Sheet")),
+      appBar: AppBar(title: const Text("Result")),
       body: FutureBuilder<Map<String, dynamic>?>(
-        future: _loadReport(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: Text("No exam taken yet."));
-          
-          final data = snapshot.data!;
+        future: _load(),
+        builder: (ctx, snap) {
+          if (!snap.hasData) return const Center(child: Text("No Exam Taken"));
+          final data = snap.data!;
           final history = data['history'] as List;
-
           return Column(
             children: [
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 color: Colors.indigo,
-                child: Column(
-                  children: [
-                    const Text("SCORE", style: TextStyle(color: Colors.white70)),
-                    Text("${data['score']}", style: const TextStyle(fontSize: 48, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+                width: double.infinity,
+                child: Text("Score: ${data['score']}", 
+                  style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
               ),
               Expanded(
                 child: ListView.builder(
                   itemCount: history.length,
                   itemBuilder: (ctx, i) {
-                    final item = history[i];
-                    final userOpt = item['userOpt'];
-                    final correctOpt = item['correctOpt'];
-                    final isCorrect = userOpt == correctOpt;
-                    final options = item['options'];
-
-                    return Card(
-                      margin: const EdgeInsets.all(8),
-                      color: isCorrect ? Colors.green[50] : Colors.red[50],
-                      child: ListTile(
-                        title: Text("Q${i+1}: ${item['q']}"),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 5),
-                            Text("Your Answer: ${userOpt != null ? options[userOpt] : 'Skipped'}", 
-                                style: TextStyle(color: isCorrect ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
-                            Text("Correct Answer: ${options[correctOpt]}", 
-                                style: const TextStyle(color: Colors.black87)),
-                          ],
-                        ),
-                        trailing: Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: isCorrect ? Colors.green : Colors.red),
-                      ),
+                    final h = history[i];
+                    final isCorrect = h['user'] == h['correct'];
+                    return ListTile(
+                      title: Text(h['q']),
+                      subtitle: Text("Your Answer: ${h['user'] == null ? 'Skipped' : h['options'][h['user']]}"),
+                      trailing: Icon(isCorrect ? Icons.check : Icons.close, color: isCorrect ? Colors.green : Colors.red),
                     );
                   },
                 ),
-              ),
+              )
             ],
           );
         },
