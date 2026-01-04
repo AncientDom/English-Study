@@ -9,10 +9,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Updated to v4 to fix deprecation
       - uses: actions/checkout@v4
 
-      # Updated to v4 for stability
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -20,20 +18,24 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0' # Ensure this matches your project
+          flutter-version: '3.19.0'
           channel: 'stable'
 
       - name: Get Dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
+      # FIX 1: Grant execution permission to the Gradle wrapper
+      - name: Fix Gradle Permissions
+        run: chmod +x android/gradlew
 
-      # THE FIX: Updated from v3 to v4
+      # FIX 2: Build in Debug mode (Bypasses need for signing keys)
+      - name: Build APK
+        run: flutter build apk --debug
+
+      # Updated Path for Debug APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          # Optional: 'retention-days' can be added here if needed
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
           
