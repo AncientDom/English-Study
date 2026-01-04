@@ -9,32 +9,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Check out the code from your repository
       - uses: actions/checkout@v4
 
+      # 2. Set up Java (Required for Android)
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
+      # 3. Set up Flutter
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      # NEW STEP: Generates the missing android/ and ios/ folders
+      # 4. REPAIR STEP: Generate missing Android/iOS folders
+      # This fixes the "No such file or directory" error.
       - name: Create Project Scaffolding
-        run: flutter create . --project-name=afcat_prep
+        run: flutter create . --project-name=afcat_prep --org=com.example
 
-      - name: Get Dependencies
-        run: flutter pub get
+      # 5. ORGANIZE STEP: Fix the "Blank Box" issue
+      # This script hunts for your files in the wrong place and moves them to 'lib/'
+      - name: Move Files to Correct Location
+        run: |
+          echo "Organizing files..."
+          
+          # Create the lib folder if it's missing
+          mkdir -p lib
 
-      # Now this step will work because 'flutter create' made the file
+          # If main.dart exists in the root, force move it to lib/ (overwriting the default)
+          if [ -f "main.dart" ]; then
+            echo "Found main.dart in root. Moving to lib/..."
+            mv -f main.dart lib/
+          fi
+
+          # Move any other Dart files from root to lib/
+          # This ensures app_state.dart, home_screen.dart etc. are not left behind
+          find . -maxdepth 1 -name "*.dart" -not -name "main.dart" -exec mv {} lib/ \; || true
+          
+          echo "File structure in lib/:"
+          ls -R lib/
+
+      # 6. Install the required plugins (Fixes 'Target of URI doesn't exist')
+      - name: Add Dependencies
+        run: |
+          flutter pub add provider
+          flutter pub add shared_preferences
+          flutter pub add intl
+          flutter pub get
+
+      # 7. Grant permission to the builder
       - name: Fix Gradle Permissions
         run: chmod +x android/gradlew
 
+      # 8. Build the APK (Debug mode)
       - name: Build APK
         run: flutter build apk --debug
 
+      # 9. Upload the result
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
